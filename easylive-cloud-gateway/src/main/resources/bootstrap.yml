@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: easylive-cloud-gateway
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+      config:
+        override-none: true
+        # 修改点：同上
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
