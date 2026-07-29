@@ -69,10 +69,14 @@ public class VideoInfoApi {
 
     @RequestMapping("/updateCountInfo")
     public void updateCountInfo(@NotEmpty String videoId, @NotEmpty String field, @NotNull Integer changeCount) {
-//        videoInfoService.updateCountInfo(videoId, field, changeCount);
-            videoInfoService.update(null,new LambdaUpdateWrapper<VideoInfo>()
-            .setSql(field + "=" + field + "+" + changeCount)
-            .eq(VideoInfo::getVideoId,videoId));
+        Set<String> allowedFields = new HashSet<>(Arrays.asList(
+                "like_count", "collect_count", "coin_count", "comment_count", "danmu_count", "play_count"));
+        if (!allowedFields.contains(field)) {
+            throw new IllegalArgumentException("非法的计数字段: " + field);
+        }
+        videoInfoService.update(null, new LambdaUpdateWrapper<VideoInfo>()
+                .setSql(field + "=" + field + "+" + changeCount)
+                .eq(VideoInfo::getVideoId, videoId));
     }
 
     @PostMapping("/getVideoInfoBatch")

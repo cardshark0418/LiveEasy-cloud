@@ -39,12 +39,20 @@ public class UserInfoApi {
 
     @RequestMapping("/updateCoinCountInfo")
     public Integer updateCoinCountInfo(@NotEmpty String userId, @NotNull Integer count) {
-
-        boolean updateCount = userInfoService.update(null, new LambdaUpdateWrapper<UserInfo>()
-        .ge(UserInfo::getTotalCoinCount, count)
-        .eq(UserInfo::getUserId, userId)
-        .setSql("total_coin_count = total_coin_count - " + count));
-        return updateCount?1:0;
+        if (count == 0) {
+            return 1;
+        }
+        // count < 0: 扣当前可用币；count > 0: 给 UP 加当前币并累计总币
+        LambdaUpdateWrapper<UserInfo> wrapper = new LambdaUpdateWrapper<UserInfo>()
+                .eq(UserInfo::getUserId, userId);
+        if (count < 0) {
+            wrapper.ge(UserInfo::getCurrentCoinCount, -count)
+                    .setSql("current_coin_count = current_coin_count + (" + count + ")");
+        } else {
+            wrapper.setSql("current_coin_count = current_coin_count + " + count
+                    + ", total_coin_count = total_coin_count + " + count);
+        }
+        return userInfoService.update(null, wrapper) ? 1 : 0;
     }
 
 

@@ -96,7 +96,7 @@ public class UserActionServiceImpl extends MPJBaseServiceImpl<UserActionMapper, 
 //                updateCount = userInfoMapper.update(null, new LambdaUpdateWrapper<UserInfo>()
 //                        .eq(UserInfo::getUserId, videoInfo.getUserId())
 //                        .setSql("total_coin_count = total_coin_count + " + bean.getActionCount()));
-                updateCount = videoClient.updateCoinCountInfo(bean.getUserId(), bean.getActionCount());
+                updateCount = videoClient.updateCoinCountInfo(videoInfo.getUserId(), bean.getActionCount());
                 if (updateCount == 0) {
                     throw new BusinessException("投币失败");
                 }

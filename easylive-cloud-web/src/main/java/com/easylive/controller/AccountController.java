@@ -101,15 +101,7 @@ public class AccountController {
     public ResponseVO autoLogin(
                             HttpServletResponse response,
                             HttpServletRequest request){
-        //token是否有效
-        String token = null;
-        Cookie[] cookies = request.getCookies();
-        for (Cookie cookie : cookies) {
-            if("token".equals(cookie.getName())){
-                token=cookie.getValue();
-            }
-        }
-
+        String token = CookieUtil.getCookieToken(request);
         if(StrUtil.isEmpty(token)){
             return getSuccessResponseVO(null);
         }
@@ -117,16 +109,16 @@ public class AccountController {
         if(userLoginDto==null){
             return  getSuccessResponseVO(null);
         }
+        long tokenExpireMs = Constants.ONE_MIN_MILLS * 60 * 24 * 7;
         if(userLoginDto.getExpireAt() - System.currentTimeMillis() < Constants.ONE_MIN_MILLS*60*24){
             redisUtils.delete(Constants.REDIS_KEY_LOGIN_TOKEN+token);
             redisUtils.delete(Constants.REDIS_KEY_USER_TOKEN + userLoginDto.getUserId());
             String newToken = UUID.randomUUID().toString();
             userLoginDto.setToken(newToken);
-            userLoginDto.setExpireAt(System.currentTimeMillis()+Constants.ONE_MIN_MILLS*60*24*7);
+            userLoginDto.setExpireAt(System.currentTimeMillis() + tokenExpireMs);
             CookieUtil.setToken2Cookie(response,newToken);
-            redisUtils.setex(Constants.REDIS_KEY_LOGIN_TOKEN+newToken,userLoginDto,Constants.ONE_MIN_MILLS*24*7);
-            redisUtils.setex(Constants.REDIS_KEY_USER_TOKEN + userLoginDto.getUserId(), newToken, Constants.ONE_MIN_MILLS  *60*24*7);
-
+            redisUtils.setex(Constants.REDIS_KEY_LOGIN_TOKEN+newToken,userLoginDto, tokenExpireMs);
+            redisUtils.setex(Constants.REDIS_KEY_USER_TOKEN + userLoginDto.getUserId(), newToken, tokenExpireMs);
         }
         return ResponseVO.getSuccessResponseVO(userLoginDto);
     }
@@ -162,7 +154,7 @@ public class AccountController {
         UserCountInfoDto userCountInfoDto = new UserCountInfoDto();
         userCountInfoDto.setFocusCount((int) focus);
         userCountInfoDto.setFansCount((int) fans);
-        userCountInfoDto.setCurrentCoinCount(userInfo.getTotalCoinCount());
+        userCountInfoDto.setCurrentCoinCount(userInfo.getCurrentCoinCount());
         return getSuccessResponseVO(userCountInfoDto);
     }
 

@@ -72,7 +72,8 @@ public class UserInfoServiceImpl extends MPJBaseServiceImpl<UserInfoMapper,UserI
         LambdaQueryWrapper<UserInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserInfo::getEmail,email);
         UserInfo userInfo = userInfoMapper.selectOne(wrapper);
-        if(userInfo==null || !userInfo.getPassword().equals(password)){
+        String md5Password = DigestUtils.md5DigestAsHex(password.getBytes());
+        if(userInfo==null || !userInfo.getPassword().equals(md5Password)){
             throw new BusinessException("邮箱或密码错误");
         }
         if(userInfo.getStatus()==0){
@@ -136,7 +137,8 @@ public class UserInfoServiceImpl extends MPJBaseServiceImpl<UserInfoMapper,UserI
         if (!dbInfo.getNickName().equals(userInfo.getNickName())) {
             Integer count = this.userInfoMapper.update(null,new LambdaUpdateWrapper<UserInfo>()
                     .eq(UserInfo::getUserId,userInfo.getUserId())
-                    .setSql("coin_count = coin_count - " + Constants.UPDATE_NICK_NAME_COIN.toString()));
+                    .ge(UserInfo::getCurrentCoinCount, Constants.UPDATE_NICK_NAME_COIN)
+                    .setSql("current_coin_count = current_coin_count - " + Constants.UPDATE_NICK_NAME_COIN));
             if (count == 0) {
                 throw new BusinessException("硬币不足，无法修改昵称");
             }

@@ -45,6 +45,9 @@ public class AdminFilter extends AbstractGatewayFilterFactory {
     }
 
     private String getTokenFromCookie(ServerHttpRequest request) {
+        if (request.getCookies() == null || request.getCookies().getFirst("adminToken") == null) {
+            return null;
+        }
         return request.getCookies().getFirst("adminToken").getValue();
     }
 

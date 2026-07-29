@@ -82,18 +82,10 @@ private AppConfig appConfig;
 
 	@RequestMapping("/logout")
 	public ResponseVO logout(HttpServletRequest request,HttpServletResponse response){
-		String token = null;
-		Cookie[] cookies = request.getCookies();
-		if(cookies!=null)
-			for(Cookie cookie:cookies){
-				if(cookie.getName().equals("token")){
-					token = cookie.getValue();
-					break;
-				}
-			}
+		String token = CookieUtil.adminGetCookieToken(request);
 		if(token!=null){
-			redisUtils.delete(Constants.REDIS_KEY_LOGIN_TOKEN+token);
-			Cookie cookie = new Cookie("token",null);
+			redisUtils.delete(Constants.REDIS_KEY_ADMIN_TOKEN+token);
+			Cookie cookie = new Cookie("adminToken",null);
 			cookie.setMaxAge(0);
 			cookie.setPath("/");
 			response.addCookie(cookie);
