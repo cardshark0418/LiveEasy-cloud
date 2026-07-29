@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: admin-route
+          uri: lb://easylive-cloud-admin
+          predicates:
+            - Path=/admin/**
+          filters:
+            - StripPrefix=1
+            - name: AdminFilter
+
+        - id: interact-ucenter
+          uri: lb://easylive-cloud-interact
+          predicates:
+            - Path=/ucenter/loadComment,/ucenter/delComment,/ucenter/loadDanmu,/ucenter/delDanmu
+
+        - id: interact-route
+          uri: lb://easylive-cloud-interact
+          predicates:
+            - Path=/comment/**,/danmu/**,/userAction/**,/online/**,/message/**
+
+        - id: resource-route
+          uri: lb://easylive-cloud-resource
+          predicates:
+            - Path=/getResource,/preUploadVideo,/uploadVideo,/delUploadVideo,/uploadImage,/videoResource/**
+
+        - id: web-route
+          uri: lb://easylive-cloud-web
+          predicates:
+            - Path=/account/**,/category/**,/video/**,/uhome/**,/ucenter/**,/sysSetting/**
+
+seata:
+  enabled: false

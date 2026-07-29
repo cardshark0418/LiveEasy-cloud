@@ -1,0 +1,93 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: easylive-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - easylive-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  elasticsearch:
+    image: elasticsearch:7.17.21
+    container_name: easylive-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    volumes:
+      - easylive-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: easylive-nacos
+    environment:
+      MODE: standalone
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      NACOS_AUTH_ENABLE: "false"
+      JAVA_OPT: "-XX:-UseContainerSupport"
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: host.docker.internal
+      MYSQL_SERVICE_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_SERVICE_DB_NAME: easylive_nacos
+      MYSQL_SERVICE_USER: ${MYSQL_USER:-root}
+      MYSQL_SERVICE_PASSWORD: ${MYSQL_PASSWORD:-123456}
+      MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=10000&socketTimeout=30000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - ./docker/nacos/application.properties:/home/nacos/conf/application.properties:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8848/nacos/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  seata-server:
+    image: seataio/seata-server:1.6.1
+    container_name: easylive-seata
+    environment:
+      SEATA_IP: 127.0.0.1
+      SEATA_PORT: 8091
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    volumes:
+      - ./docker/seata/application.yml:/seata-server/resources/application.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      nacos:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8091'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  easylive-redis-data:
+  easylive-es-data:

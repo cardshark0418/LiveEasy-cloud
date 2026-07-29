@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Docker ###
+.env
+
+### Agent scratch ###
+.superpowers/
