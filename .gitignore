@@ -37,3 +37,7 @@ build/
 
 ### Agent scratch ###
 .superpowers/
+
+### Superpowers working docs ###
+docs/superpowers/
+
