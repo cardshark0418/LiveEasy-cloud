@@ -74,7 +74,11 @@ public class VideoCommentController{
             pageNoInt = 1;
         }
         VideoInfo videoInfo = videoClient.getVideoInfoByVideoId(videoId);
-        if (videoInfo.getInteraction() != null && videoInfo.getInteraction().contains("1")) {
+        if (videoInfo == null) {
+            return getSuccessResponseVO(new VideoCommentResultVO());
+        }
+        // "1"=关闭评论
+        if (isInteractionFlagOn(videoInfo.getInteraction(), "1")) {
             return getSuccessResponseVO(new VideoCommentResultVO());
         }
 
@@ -151,12 +155,27 @@ public class VideoCommentController{
         VideoCommentResultVO resultVO = new VideoCommentResultVO();
         resultVO.setCommentData(commentData);
         UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
-        List<UserAction> userActionList = userActionService.list(new LambdaQueryWrapper<UserAction>()
-                .eq(UserAction::getUserId, tokenUserInfoDto.getUserId())
-                .eq(UserAction::getVideoId, videoId)
-                .in(UserAction::getActionType, (Object[]) new Integer[]{UserActionTypeEnum.COMMENT_LIKE.getType(), UserActionTypeEnum.COMMENT_HATE.getType()}));
+        List<UserAction> userActionList = new ArrayList<>();
+        if (tokenUserInfoDto != null) {
+            userActionList = userActionService.list(new LambdaQueryWrapper<UserAction>()
+                    .eq(UserAction::getUserId, tokenUserInfoDto.getUserId())
+                    .eq(UserAction::getVideoId, videoId)
+                    .in(UserAction::getActionType, (Object[]) new Integer[]{UserActionTypeEnum.COMMENT_LIKE.getType(), UserActionTypeEnum.COMMENT_HATE.getType()}));
+        }
         resultVO.setUserActionList(userActionList);
         return getSuccessResponseVO(resultVO);
+    }
+
+    private boolean isInteractionFlagOn(String interaction, String flag) {
+        if (interaction == null || interaction.isEmpty()) {
+            return false;
+        }
+        for (String part : interaction.split(",")) {
+            if (flag.equals(part.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void fillUserInfo(VideoComment comment, Map<String, UserInfo> userInfoMap) {
@@ -206,21 +225,21 @@ public class VideoCommentController{
         return getSuccessResponseVO(comment);
     }
 
-//    @RequestMapping("/topComment")
-//    @GlobalInterceptor(checkLogin = true)
-//    public ResponseVO topComment(@NotNull Integer commentId) {
-//        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto();
-//        videoCommentService.topComment(commentId, tokenUserInfoDto.getUserId());
-//        return getSuccessResponseVO(null);
-//    }
+    @RequestMapping("/topComment")
+    @GlobalInterceptor(checkLogin = true)
+    public ResponseVO topComment(@NotNull Integer commentId, HttpServletRequest request) {
+        UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
+        videoCommentService.topComment(commentId, tokenUserInfoDto.getUserId());
+        return getSuccessResponseVO(null);
+    }
 
-//    @RequestMapping("/cancelTopComment")
-//    @GlobalInterceptor(checkLogin = true)
-//    public ResponseVO cancelTopComment(@NotNull Integer commentId) {
-//        TokenUserInfoDto tokenUserInfoDto = getTokenUserInfoDto();
-//        videoCommentService.cancelTopComment(commentId, tokenUserInfoDto.getUserId());
-//        return getSuccessResponseVO(null);
-//    }
+    @RequestMapping("/cancelTopComment")
+    @GlobalInterceptor(checkLogin = true)
+    public ResponseVO cancelTopComment(@NotNull Integer commentId, HttpServletRequest request) {
+        UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
+        videoCommentService.cancelTopComment(commentId, tokenUserInfoDto.getUserId());
+        return getSuccessResponseVO(null);
+    }
 
 
     @RequestMapping("/delComment")

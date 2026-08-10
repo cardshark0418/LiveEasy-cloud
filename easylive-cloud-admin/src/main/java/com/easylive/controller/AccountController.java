@@ -60,7 +60,7 @@ private AppConfig appConfig;
 							HttpServletResponse response,
 							HttpServletRequest request){
 		try {
-			if(!checkCode.equals(redisUtils.get(Constants.REDIS_KEY_CHECK_CODE+checkCodeKey))){
+			if(checkCode == null || checkCode.isEmpty() || !checkCode.equals(redisUtils.get(Constants.REDIS_KEY_CHECK_CODE+checkCodeKey))){
 				throw new BusinessException("验证码错误！");
 			}
 			if(!account.equals(appConfig.getAccount()) || !password.equals(DigestUtils.md5DigestAsHex(appConfig.getPassword().getBytes()))){

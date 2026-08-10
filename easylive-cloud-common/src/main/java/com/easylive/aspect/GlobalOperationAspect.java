@@ -46,12 +46,20 @@ public class GlobalOperationAspect {
     private void checkLogin() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String token = CookieUtil.getCookieToken(request);
-        if (StrUtil.isEmpty(token)) {
-            throw new BusinessException(ResponseCodeEnum.CODE_901);
+        if (!StrUtil.isEmpty(token)) {
+            UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
+            if (tokenUserInfoDto != null) {
+                return;
+            }
         }
-        UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
-        if (tokenUserInfoDto == null) {
-            throw new BusinessException(ResponseCodeEnum.CODE_901);
+        // 管理端上传等场景：允许 adminToken
+        String adminToken = CookieUtil.adminGetCookieToken(request);
+        if (!StrUtil.isEmpty(adminToken)) {
+            Object admin = redisUtils.get(com.easylive.entity.constants.Constants.REDIS_KEY_ADMIN_TOKEN + adminToken);
+            if (admin != null) {
+                return;
+            }
         }
+        throw new BusinessException(ResponseCodeEnum.CODE_901);
     }
 }

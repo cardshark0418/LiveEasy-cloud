@@ -140,8 +140,31 @@ public class VideoController {
     @RequestMapping("/getVideoRecommend")
 //    @GlobalInterceptor
     public ResponseVO getVideoRecommend(@NotEmpty String keyword, @NotEmpty String videoId) {
-        List<VideoInfo> videoInfoList = esSearchComponent.search(false, keyword, SearchOrderTypeEnum.VIDEO_PLAY.getType(), 1, 10).getList();
-        videoInfoList = videoInfoList.stream().filter(item -> !item.getVideoId().equals(videoId)).collect(Collectors.toList());
+        List<VideoInfo> videoInfoList;
+        try {
+            videoInfoList = esSearchComponent.search(false, keyword, SearchOrderTypeEnum.VIDEO_PLAY.getType(), 1, 10).getList();
+            if (videoInfoList == null) {
+                videoInfoList = new ArrayList<>();
+            }
+            videoInfoList = videoInfoList.stream().filter(item -> !videoId.equals(item.getVideoId())).collect(Collectors.toList());
+        } catch (Exception e) {
+            // ES 异常时回退到库内同分类/热门，避免详情页推荐直接 500
+            videoInfoList = new ArrayList<>();
+        }
+        if (videoInfoList.isEmpty()) {
+            VideoInfo current = videoInfoService.getById(videoId);
+            MPJLambdaWrapper<VideoInfo> wrapper = new MPJLambdaWrapper<VideoInfo>()
+                    .ne(VideoInfo::getVideoId, videoId)
+                    .orderByDesc(VideoInfo::getPlayCount)
+                    .last("LIMIT 10")
+                    .selectAll(VideoInfo.class)
+                    .leftJoin(UserInfo.class, UserInfo::getUserId, VideoInfo::getUserId)
+                    .select(UserInfo::getNickName, UserInfo::getAvatar);
+            if (current != null && current.getPCategoryId() != null) {
+                wrapper.eq(VideoInfo::getPCategoryId, current.getPCategoryId());
+            }
+            videoInfoList = videoInfoService.selectJoinList(VideoInfo.class, wrapper);
+        }
         return getSuccessResponseVO(videoInfoList);
     }
 

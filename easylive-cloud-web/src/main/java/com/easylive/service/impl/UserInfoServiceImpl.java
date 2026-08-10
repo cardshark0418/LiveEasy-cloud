@@ -72,8 +72,8 @@ public class UserInfoServiceImpl extends MPJBaseServiceImpl<UserInfoMapper,UserI
         LambdaQueryWrapper<UserInfo> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(UserInfo::getEmail,email);
         UserInfo userInfo = userInfoMapper.selectOne(wrapper);
-        String md5Password = DigestUtils.md5DigestAsHex(password.getBytes());
-        if(userInfo==null || !userInfo.getPassword().equals(md5Password)){
+        // 前端登录已 MD5 一次；注册时后端对明文 MD5 入库，此处直接比对，勿再哈希
+        if(userInfo==null || !userInfo.getPassword().equals(password)){
             throw new BusinessException("邮箱或密码错误");
         }
         if(userInfo.getStatus()==0){
@@ -146,7 +146,7 @@ public class UserInfoServiceImpl extends MPJBaseServiceImpl<UserInfoMapper,UserI
         this.userInfoMapper.updateById(userInfo);
 
         Boolean updateTokenInfo = false;
-        if (!userInfo.getAvatar().equals(tokenUserInfoDto.getAvatar())) {
+        if (!Objects.equals(userInfo.getAvatar(), tokenUserInfoDto.getAvatar())) {
             tokenUserInfoDto.setAvatar(userInfo.getAvatar());
             updateTokenInfo = true;
         }

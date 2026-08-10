@@ -65,10 +65,8 @@ public class UserActionServiceImpl extends MPJBaseServiceImpl<UserActionMapper, 
                 } else {
                     userActionMapper.insert(bean);
                 }
-                Integer changeCount = bean.getActionCount();
-//                videoInfoMapper.update(null,new LambdaUpdateWrapper<VideoInfo>()
-//                        .setSql(actionTypeEnum.getField() + "=" + actionTypeEnum.getField() + "+" + changeCount)
-//                        .eq(VideoInfo::getVideoId,bean.getVideoId()));
+                // 取消点赞/收藏时计数应减，新增时加
+                Integer changeCount = dbAction != null ? -bean.getActionCount() : bean.getActionCount();
                 videoClient.updateCountInfo(bean.getVideoId(),actionTypeEnum.getField(),changeCount);
 
                 if (actionTypeEnum == UserActionTypeEnum.VIDEO_COLLECT) {

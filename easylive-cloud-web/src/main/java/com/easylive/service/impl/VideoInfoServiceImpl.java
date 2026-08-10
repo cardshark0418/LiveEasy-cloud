@@ -91,8 +91,9 @@ public class VideoInfoServiceImpl extends MPJBaseServiceImpl<VideoInfoMapper, Vi
          */
         SysSettingDto sysSettingDto = redisComponent.getSysSettingDto();
         userInfoService.update(new LambdaUpdateWrapper<UserInfo>()
-                .eq(UserInfo::getUserId,userId)
-                .setSql("total_coin_count = total_coin_count - " + sysSettingDto.getPostVideoCoinCount().toString()));
+                .eq(UserInfo::getUserId, videoInfoPost.getUserId())
+                .setSql("total_coin_count = total_coin_count - " + sysSettingDto.getPostVideoCoinCount()
+                        + ", current_coin_count = current_coin_count - " + sysSettingDto.getPostVideoCoinCount()));
         /**
          * 删除es信息
          */

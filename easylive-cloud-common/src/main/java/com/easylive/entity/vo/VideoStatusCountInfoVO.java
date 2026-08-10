@@ -4,7 +4,9 @@ import lombok.Data;
 
 @Data
 public class VideoStatusCountInfoVO {
-    private Integer auditPassCount;
+    /** 前端字段：已通过 */
+    private Integer auditSuccessCount;
     private Integer auditFailCount;
-    private Integer inProgress;
+    /** 前端字段：进行中 */
+    private Integer inProcessCount;
 }

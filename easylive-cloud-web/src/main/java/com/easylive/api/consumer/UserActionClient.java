@@ -3,6 +3,7 @@ package com.easylive.api.consumer;
 import com.easylive.entity.constants.Constants;
 import com.easylive.entity.po.StatisticsInfo;
 import com.easylive.entity.po.UserAction;
+import com.easylive.entity.vo.PaginationResultVO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,5 +29,8 @@ public interface UserActionClient {
 
     @RequestMapping(Constants.INNER_API_PREFIX+"/userAction"+"/selectStatisticsInfo")
     List<StatisticsInfo> selectStatisticsInfo(@RequestParam String begin,@RequestParam String end,@RequestParam Integer[] actionTypes);
+
+    @RequestMapping(Constants.INNER_API_PREFIX+"/userAction"+"/loadUserCollection")
+    PaginationResultVO<UserAction> loadUserCollection(@RequestParam String userId, @RequestParam(required = false) Integer pageNo);
 }
 

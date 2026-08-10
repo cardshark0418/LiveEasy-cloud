@@ -16,8 +16,13 @@ public class PaginationResultVO<T> {
     public PaginationResultVO(Integer totalCount, Integer pageSize, Integer pageNo, List<T> list) {
         this.totalCount = totalCount;
         this.pageSize = pageSize;
-        this.pageNo = pageNo;
+        this.pageNo = pageNo == null || pageNo == 0 ? 1 : pageNo;
         this.list = list;
+        if (pageSize != null && pageSize > 0 && totalCount != null) {
+            this.pageTotal = (totalCount + pageSize - 1) / pageSize;
+        } else {
+            this.pageTotal = 1;
+        }
     }
 
     public PaginationResultVO(Integer totalCount, Integer pageSize, Integer pageNo, Integer pageTotal, List<T> list) {

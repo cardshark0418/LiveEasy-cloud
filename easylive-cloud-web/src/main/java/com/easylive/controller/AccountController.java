@@ -83,7 +83,7 @@ public class AccountController {
                             HttpServletResponse response,
                             HttpServletRequest request){
         try {
-            if(!checkCode.equals(redisUtils.get(Constants.REDIS_KEY_CHECK_CODE+checkCodeKey))){
+            if(StrUtil.isBlank(checkCode) || !checkCode.equals(redisUtils.get(Constants.REDIS_KEY_CHECK_CODE+checkCodeKey))){
                 throw new BusinessException("验证码错误！");
             }
             String ip = ServletUtil.getClientIP(request);
@@ -125,17 +125,13 @@ public class AccountController {
 
     @RequestMapping("/logout")
     public ResponseVO logout(HttpServletRequest request,HttpServletResponse response){
-        String token = null;
-        Cookie[] cookies = request.getCookies();
-        if(cookies!=null)
-            for(Cookie cookie:cookies){
-                if(cookie.getName().equals("token")){
-                    token = cookie.getValue();
-                    break;
-                }
-            }
+        String token = CookieUtil.getCookieToken(request);
         if(token!=null){
+            UserLoginDto loginDto = (UserLoginDto) redisUtils.get(Constants.REDIS_KEY_LOGIN_TOKEN + token);
             redisUtils.delete(Constants.REDIS_KEY_LOGIN_TOKEN+token);
+            if (loginDto != null && loginDto.getUserId() != null) {
+                redisUtils.delete(Constants.REDIS_KEY_USER_TOKEN + loginDto.getUserId());
+            }
             Cookie cookie = new Cookie("token",null);
             cookie.setMaxAge(0);
             cookie.setPath("/");

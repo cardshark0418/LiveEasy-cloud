@@ -13,4 +13,8 @@ public interface VideoCommentService extends MPJBaseService<VideoComment> {
     PaginationResultVO<VideoComment> getCommentList(@NotEmpty String videoId, Integer pageNo, Integer orderType);
 
     void deleteComment(@NotNull Integer commentId, String userId);
+
+    void topComment(@NotNull Integer commentId, String userId);
+
+    void cancelTopComment(@NotNull Integer commentId, String userId);
 }
