@@ -259,18 +259,14 @@ public class VideoInfoPostServiceImpl extends ServiceImpl<VideoInfoPostMapper,Vi
 
     @Override
     public PaginationResultVO<VideoInfoPost> findListByPage(VideoInfoPostQuery param) {
-        // 查总数
-        LambdaQueryWrapper<VideoInfoPost> countWrapper = new LambdaQueryWrapper<>();
-        // 补全 countWrapper 的过滤条件（userId, status 等）...
-        int count = (int) count(countWrapper);
+        Integer total = videoInfoPostMapper.selectCountByQuery(param);
+        int count = total == null ? 0 : total;
 
-        // 2. 计算分页
         int pageSize = param.getPageSize() == null ? Constants.PAGE_SIZE_15 : param.getPageSize();
         int pageNo = param.getPageNo() == null ? 1 : param.getPageNo();
         SimplePage page = new SimplePage(pageNo, count, pageSize);
         param.setSimplePage(page);
 
-        // 3. 执行我们刚刚写在接口里的动态 Join 查询
         List<VideoInfoPost> list = videoInfoPostMapper.selectListByQuery(param);
 
         return new PaginationResultVO<>(count, pageSize, pageNo, page.getPageTotal(), list);
@@ -314,7 +310,8 @@ public class VideoInfoPostServiceImpl extends ServiceImpl<VideoInfoPostMapper,Vi
 
             userInfoService.update(new LambdaUpdateWrapper<UserInfo>()
                     .eq(UserInfo::getUserId,infoPost.getUserId())
-                    .setSql("total_coin_count = total_coin_count + "+sysSettingDto.getPostVideoCoinCount()));
+                    .setSql("total_coin_count = total_coin_count + " + sysSettingDto.getPostVideoCoinCount()
+                            + ", current_coin_count = current_coin_count + " + sysSettingDto.getPostVideoCoinCount()));
         }
         /**
          * 将发布信息复制到正式表信息

@@ -1,11 +1,13 @@
 package com.easylive.api.provider;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easylive.entity.constants.Constants;
 import com.easylive.entity.po.StatisticsInfo;
 import com.easylive.entity.po.UserAction;
 import com.easylive.entity.po.VideoComment;
 import com.easylive.entity.po.VideoDanmu;
+import com.easylive.entity.vo.PaginationResultVO;
 import com.easylive.enums.UserActionTypeEnum;
 import com.easylive.mapper.UserActionMapper;
 import com.easylive.mapper.VideoCommentMapper;
@@ -79,5 +81,17 @@ public class UserActionApi {
                         .groupBy(UserAction::getVideoUserId)
                         .groupBy(UserAction::getActionType)
         );
+    }
+
+    @RequestMapping("/loadUserCollection")
+    PaginationResultVO<UserAction> loadUserCollection(@RequestParam String userId, @RequestParam(required = false) Integer pageNo) {
+        pageNo = (pageNo == null || pageNo < 1) ? 1 : pageNo;
+        Page<UserAction> page = new Page<>(pageNo, 15);
+        Page<UserAction> result = userActionMapper.selectPage(page, new LambdaQueryWrapper<UserAction>()
+                .eq(UserAction::getUserId, userId)
+                .eq(UserAction::getActionType, UserActionTypeEnum.VIDEO_COLLECT.getType())
+                .orderByDesc(UserAction::getActionTime));
+        return new PaginationResultVO<>(
+                (int) result.getTotal(), 15, pageNo, result.getRecords());
     }
 }

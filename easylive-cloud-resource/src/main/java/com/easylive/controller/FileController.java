@@ -161,6 +161,10 @@ public class FileController {
     @GlobalInterceptor
     public void getVideoResource(HttpServletResponse response,HttpServletRequest request, @PathVariable @NotEmpty String fileId) {
         VideoInfoFile videoInfoFile = videoClient.getVideoInfoFileByFileId(fileId);
+        if (videoInfoFile == null) {
+            response.setStatus(404);
+            return;
+        }
         String filePath = videoInfoFile.getFilePath();
         readFile(response, filePath + "/" + Constants.M3U8_NAME);
 
@@ -169,9 +173,11 @@ public class FileController {
         videoPlayInfoDto.setFileIndex(videoInfoFile.getFileIndex());
 
         String token = CookieUtil.getCookieToken(request);
-        UserLoginDto tokenUserInfoDto = (UserLoginDto) redisUtils.get(Constants.REDIS_KEY_LOGIN_TOKEN + token);
-        if (tokenUserInfoDto != null) {
-            videoPlayInfoDto.setUserId(tokenUserInfoDto.getUserId());
+        if (token != null) {
+            UserLoginDto tokenUserInfoDto = (UserLoginDto) redisUtils.get(Constants.REDIS_KEY_LOGIN_TOKEN + token);
+            if (tokenUserInfoDto != null) {
+                videoPlayInfoDto.setUserId(tokenUserInfoDto.getUserId());
+            }
         }
         redisComponent.addVideoPlay(videoPlayInfoDto);
     }
@@ -180,6 +186,10 @@ public class FileController {
     @GlobalInterceptor
     public void getVideoResourceTs(HttpServletResponse response, @PathVariable @NotEmpty String fileId, @PathVariable @NotNull String ts) {
         VideoInfoFile videoInfoFile = videoClient.getVideoInfoFileByFileId(fileId);
+        if (videoInfoFile == null) {
+            response.setStatus(404);
+            return;
+        }
         String filePath = videoInfoFile.getFilePath();
         readFile(response, filePath + "/" + ts);
     }

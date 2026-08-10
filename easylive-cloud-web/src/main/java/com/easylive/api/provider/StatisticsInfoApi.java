@@ -42,7 +42,7 @@ public class StatisticsInfoApi {
 
     @RequestMapping("/getActualTimeStatisticsInfo")
     Map getActualTimeStatisticsInfo(){
-        String preDate = DateUtil.formatDate(DateUtil.yesterday());
+        String preDate = DateUtil.format(DateUtil.yesterday(), "yyyyMMdd");
         List<StatisticsInfo> preDayData = statisticsInfoService.getPreDayTotalInfo(preDate);
         //查询用户总数，替换类型为粉丝的数量
         Integer userCount = Math.toIntExact(userInfoService.count(new LambdaQueryWrapper<UserInfo>()));

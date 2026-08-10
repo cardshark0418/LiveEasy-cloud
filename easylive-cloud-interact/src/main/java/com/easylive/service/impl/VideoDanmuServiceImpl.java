@@ -1,6 +1,5 @@
 package com.easylive.service.impl;
 
-import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.easylive.api.consumer.VideoClient;
 import com.easylive.entity.po.VideoDanmu;
 import com.easylive.entity.po.VideoInfo;
@@ -36,8 +35,8 @@ public class VideoDanmuServiceImpl extends MPJBaseServiceImpl<VideoDanmuMapper, 
         if (videoInfo == null) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
-        //是否关闭弹幕
-        if (videoInfo.getInteraction() != null && videoInfo.getInteraction().contains(Constants.ONE)) {
+        //是否关闭弹幕（interaction 存 "0"=关弹幕, "1"=关评论，逗号拼接）
+        if (isInteractionFlagOn(videoInfo.getInteraction(), "0")) {
             throw new BusinessException("UP主已关闭弹幕");
         }
         this.videoDanmuMapper.insert(bean);
@@ -81,5 +80,18 @@ public class VideoDanmuServiceImpl extends MPJBaseServiceImpl<VideoDanmuMapper, 
 
         // 4. ES 索引计数 -1
         videoClient.updateDocCount(danmu.getVideoId(), SearchOrderTypeEnum.VIDEO_DANMU, -1);
+    }
+
+    /** interaction 为逗号分隔标记："0"=关弹幕，"1"=关评论 */
+    private boolean isInteractionFlagOn(String interaction, String flag) {
+        if (interaction == null || interaction.isEmpty()) {
+            return false;
+        }
+        for (String part : interaction.split(",")) {
+            if (flag.equals(part.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

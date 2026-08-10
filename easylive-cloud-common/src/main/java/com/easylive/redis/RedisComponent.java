@@ -21,6 +21,7 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -76,7 +77,10 @@ public class RedisComponent {
     }
 
     public void addFile2DelQueue(String videoId, List<String> delFilePathList) {
-        redisUtils.lpushAll(Constants.REDIS_KEY_FILE_DEL+videoId, Collections.singletonList(delFilePathList),Constants.ONE_MIN_MILLS*60*24);
+        if (delFilePathList == null || delFilePathList.isEmpty()) {
+            return;
+        }
+        redisUtils.lpushAll(Constants.REDIS_KEY_FILE_DEL + videoId, new ArrayList<>(delFilePathList), Constants.ONE_MIN_MILLS * 60 * 24);
     }
 
     public void addFile2TransferQueue(List<VideoInfoFilePost> fileList) {

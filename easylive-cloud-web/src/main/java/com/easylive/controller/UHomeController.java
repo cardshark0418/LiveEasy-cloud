@@ -3,6 +3,7 @@ package com.easylive.controller;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easylive.annotation.GlobalInterceptor;
+import com.easylive.api.consumer.UserActionClient;
 import com.easylive.entity.po.UserAction;
 import com.easylive.entity.po.UserFocus;
 import com.easylive.entity.po.UserInfo;
@@ -11,7 +12,6 @@ import com.easylive.entity.vo.PaginationResultVO;
 import com.easylive.entity.vo.ResponseVO;
 import com.easylive.entity.vo.UserInfoVO;
 import com.easylive.entity.vo.UserLoginDto;
-import com.easylive.enums.UserActionTypeEnum;
 import com.easylive.enums.VideoOrderTypeEnum;
 import com.easylive.redis.RedisComponent;
 import com.easylive.service.UserFocusService;
@@ -28,6 +28,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.easylive.entity.vo.ResponseVO.getSuccessResponseVO;
 
@@ -45,8 +50,8 @@ public class UHomeController {
     @Resource
     private UserFocusService userFocusService;
 
-//    @Resource
-//    private UserActionService userActionService;
+    @Resource
+    private UserActionClient userActionClient;
 
     @Autowired
     private RedisComponent redisComponent;
@@ -81,6 +86,17 @@ public class UHomeController {
         userInfo.setNoticeInfo(noticeInfo);
         userInfoService.updateUserInfo(userInfo, tokenUserInfoDto);
 
+        return getSuccessResponseVO(null);
+    }
+
+    @RequestMapping("/saveTheme")
+    @GlobalInterceptor(checkLogin = true)
+    public ResponseVO saveTheme(@NotNull Integer theme, HttpServletRequest request) {
+        UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(tokenUserInfoDto.getUserId());
+        userInfo.setTheme(theme);
+        userInfoService.updateById(userInfo);
         return getSuccessResponseVO(null);
     }
 
@@ -129,7 +145,7 @@ public class UHomeController {
                         .selectAs(UserInfo::getUserId, UserFocus::getOtherUserId)
                         .selectAs(UserInfo::getAvatar, UserFocus::getOtherAvatar)
                         .selectAs(UserInfo::getPersonIntroduction, UserFocus::getOtherPersonIntroduction)
-                        .leftJoin(UserInfo.class, UserInfo::getUserId, UserFocus::getFocusUserId)
+                        .leftJoin(UserInfo.class, UserInfo::getUserId, UserFocus::getUserId)
                         .eq(UserFocus::getFocusUserId, tokenUserInfoDto.getUserId())
                         .orderByDesc(UserFocus::getFocusTime));
         PaginationResultVO<UserFocus> resultVO = new PaginationResultVO<UserFocus>((int) userFansPage.getTotal(),15,pageNo,userFansPage.getRecords());
@@ -156,21 +172,27 @@ public class UHomeController {
         return getSuccessResponseVO(resultVO);
     }
 
-//    @RequestMapping("/loadUserCollection")
-////    @GlobalInterceptor
-//    public ResponseVO loadUserCollection(@NotEmpty String userId, Integer pageNo) {
-//        pageNo = (pageNo == null || pageNo < 1) ? 1 : pageNo;
-//
-//        Page<UserAction> userActionPage = userActionService.selectJoinListPage(new Page<>(pageNo, 15),
-//                UserAction.class,
-//                new MPJLambdaWrapper<UserAction>()
-//                        .selectAll(UserAction.class)
-//                        .select(VideoInfo::getVideoName,VideoInfo::getVideoCover)
-//                        .leftJoin(VideoInfo.class,VideoInfo::getVideoId,UserAction::getVideoId)
-//                        .eq(UserAction::getUserId,userId)
-//                        .eq(UserAction::getActionType,UserActionTypeEnum.VIDEO_COLLECT.getType())
-//                        .orderByDesc("action_time"));
-//        PaginationResultVO resultVO = new PaginationResultVO((int) userActionPage.getTotal(),15,pageNo,userActionPage.getRecords());
-//        return getSuccessResponseVO(resultVO);
-//    }
+    @RequestMapping("/loadUserCollection")
+    public ResponseVO loadUserCollection(@NotEmpty String userId, Integer pageNo) {
+        PaginationResultVO<UserAction> resultVO = userActionClient.loadUserCollection(userId, pageNo);
+        if (resultVO != null && resultVO.getList() != null && !resultVO.getList().isEmpty()) {
+            List<String> videoIds = resultVO.getList().stream()
+                    .map(UserAction::getVideoId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (!videoIds.isEmpty()) {
+                Map<String, VideoInfo> videoMap = videoInfoService.listByIds(videoIds).stream()
+                        .collect(Collectors.toMap(VideoInfo::getVideoId, Function.identity(), (a, b) -> a));
+                for (UserAction action : resultVO.getList()) {
+                    VideoInfo videoInfo = videoMap.get(action.getVideoId());
+                    if (videoInfo != null) {
+                        action.setVideoName(videoInfo.getVideoName());
+                        action.setVideoCover(videoInfo.getVideoCover());
+                    }
+                }
+            }
+        }
+        return getSuccessResponseVO(resultVO);
+    }
 }

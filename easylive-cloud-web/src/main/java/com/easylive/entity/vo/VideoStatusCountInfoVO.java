@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class VideoStatusCountInfoVO {
-    private Integer auditPassCount;
+    private Integer auditSuccessCount;
     private Integer auditFailCount;
-    private Integer inProgress;
+    private Integer inProcessCount;
 }

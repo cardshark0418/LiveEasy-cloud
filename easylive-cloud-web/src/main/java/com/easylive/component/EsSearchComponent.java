@@ -33,6 +33,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.xcontent.XContentType;
 import org.springframework.stereotype.Component;
@@ -81,43 +82,41 @@ public class EsSearchComponent {
                             "      }\n" +
                             "    }}", XContentType.JSON);
 
+            // videoName 用 standard：本机 ES 未装 IK 插件时 ik_max_word 会导致建索引失败，留下空 mapping
             request.mapping(
                     "{\"properties\": {\n" +
                             "      \"videoId\":{\n" +
-                            "        \"type\": \"text\",\n" +
+                            "        \"type\": \"keyword\",\n" +
                             "        \"index\": false\n" +
                             "      },\n" +
                             "      \"userId\":{\n" +
-                            "        \"type\": \"text\",\n" +
+                            "        \"type\": \"keyword\",\n" +
                             "        \"index\": false\n" +
                             "      },\n" +
                             "      \"videoCover\":{\n" +
-                            "        \"type\": \"text\",\n" +
+                            "        \"type\": \"keyword\",\n" +
                             "        \"index\": false\n" +
                             "      },\n" +
                             "      \"videoName\":{\n" +
                             "        \"type\": \"text\",\n" +
-                            "        \"analyzer\": \"ik_max_word\"\n" +
+                            "        \"analyzer\": \"standard\"\n" +
                             "      },\n" +
                             "      \"tags\":{\n" +
                             "        \"type\": \"text\",\n" +
                             "        \"analyzer\": \"comma\"\n" +
                             "      },\n" +
                             "      \"playCount\":{\n" +
-                            "        \"type\":\"integer\",\n" +
-                            "        \"index\":false\n" +
+                            "        \"type\":\"integer\"\n" +
                             "      },\n" +
                             "      \"danmuCount\":{\n" +
-                            "        \"type\":\"integer\",\n" +
-                            "        \"index\":false\n" +
+                            "        \"type\":\"integer\"\n" +
                             "      },\n" +
                             "      \"collectCount\":{\n" +
-                            "        \"type\":\"integer\",\n" +
-                            "        \"index\":false\n" +
+                            "        \"type\":\"integer\"\n" +
                             "      },\n" +
                             "      \"createTime\":{\n" +
                             "        \"type\":\"date\",\n" +
-                            "        \"format\": \"yyyy-MM-dd HH:mm:ss\",\n" +
+                            "        \"format\": \"yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\",\n" +
                             "        \"index\": false\n" +
                             "      }\n" +
                             " }}", XContentType.JSON);
@@ -218,12 +217,14 @@ public class EsSearchComponent {
                 highlightBuilder.postTags("</span>");
                 searchSourceBuilder.highlighter(highlightBuilder);
             }
-            //排序
-            if (orderType != null) {
-                searchSourceBuilder.sort(searchOrderTypeEnum.getField(), SortOrder.DESC); // 第一个排序字段，升序
-            }
-            else{
-                searchSourceBuilder.sort("_score", SortOrder.DESC); // 第一个排序字段，倒序
+            //排序（带 unmappedType，避免索引无字段/空 mapping 时 sort 直接 500）
+            if (orderType != null && searchOrderTypeEnum != null) {
+                String unmappedType = "createTime".equals(searchOrderTypeEnum.getField()) ? "date" : "long";
+                searchSourceBuilder.sort(new FieldSortBuilder(searchOrderTypeEnum.getField())
+                        .order(SortOrder.DESC)
+                        .unmappedType(unmappedType));
+            } else {
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
             }
             pageNo = pageNo == null ? 1 : pageNo;
             //分页查询

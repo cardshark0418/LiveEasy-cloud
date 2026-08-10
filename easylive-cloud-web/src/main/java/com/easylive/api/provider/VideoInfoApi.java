@@ -161,7 +161,7 @@ public class VideoInfoApi {
         return videoInfoService.list(new LambdaQueryWrapper<VideoInfo>().like(VideoInfo::getVideoName,videoNameFuzzy));
     }
 
-    @RequestMapping("/getVideoCount")
+    @PostMapping("/getVideoCount")
     Integer getVideoCount(@RequestBody Integer categoryId){
         return Math.toIntExact(videoInfoService.count(new LambdaQueryWrapper<VideoInfo>()
                 .eq(VideoInfo::getCategoryId, categoryId)

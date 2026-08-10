@@ -112,9 +112,9 @@ public class UCenterVideoPostController{
                 .notIn(VideoInfoPost::getStatus, VideoStatusEnum.STATUS3.getStatus(), VideoStatusEnum.STATUS4.getStatus()));
 
         VideoStatusCountInfoVO countInfo = new VideoStatusCountInfoVO();
-        countInfo.setAuditPassCount(auditPassCount);
+        countInfo.setAuditSuccessCount(auditPassCount);
         countInfo.setAuditFailCount(auditFailCount);
-        countInfo.setInProgress(inProgress);
+        countInfo.setInProcessCount(inProgress);
         return getSuccessResponseVO(countInfo);
     }
     @RequestMapping("/getVideoByVideoId")

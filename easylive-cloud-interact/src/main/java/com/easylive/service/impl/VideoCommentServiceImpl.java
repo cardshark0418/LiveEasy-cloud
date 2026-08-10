@@ -1,8 +1,8 @@
 package com.easylive.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.easylive.api.consumer.VideoClient;
 import com.easylive.entity.po.UserInfo;
@@ -41,8 +41,8 @@ public class VideoCommentServiceImpl extends MPJBaseServiceImpl<VideoCommentMapp
         if (videoInfo == null) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
-        //是否关闭评论
-        if (videoInfo.getInteraction() != null && videoInfo.getInteraction().contains(Constants.ZERO.toString())) {
+        //是否关闭评论（"1"=关评论）
+        if (isInteractionFlagOn(videoInfo.getInteraction(), "1")) {
             throw new BusinessException("UP主已关闭评论区");
         }
         if (replyCommentId != null) {//如果是回复别人的评论
@@ -139,5 +139,54 @@ public class VideoCommentServiceImpl extends MPJBaseServiceImpl<VideoCommentMapp
             videoCommentMapper.delete(new LambdaQueryWrapper<VideoComment>()
                     .eq(VideoComment::getPCommentId,commentId));
         }
+    }
+
+    @Override
+    @GlobalTransactional(rollbackFor = Exception.class)
+    public void topComment(Integer commentId, String userId) {
+        VideoComment comment = videoCommentMapper.selectById(commentId);
+        if (comment == null || comment.getPCommentId() != 0) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        VideoInfo videoInfo = videoClient.getVideoInfoByVideoId(comment.getVideoId());
+        if (videoInfo == null || !videoInfo.getUserId().equals(userId)) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        videoCommentMapper.update(null, new LambdaUpdateWrapper<VideoComment>()
+                .eq(VideoComment::getVideoId, comment.getVideoId())
+                .eq(VideoComment::getTopType, 1)
+                .set(VideoComment::getTopType, 0));
+        videoCommentMapper.update(null, new LambdaUpdateWrapper<VideoComment>()
+                .eq(VideoComment::getCommentId, commentId)
+                .set(VideoComment::getTopType, 1));
+    }
+
+    @Override
+    @GlobalTransactional(rollbackFor = Exception.class)
+    public void cancelTopComment(Integer commentId, String userId) {
+        VideoComment comment = videoCommentMapper.selectById(commentId);
+        if (comment == null) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        VideoInfo videoInfo = videoClient.getVideoInfoByVideoId(comment.getVideoId());
+        if (videoInfo == null || !videoInfo.getUserId().equals(userId)) {
+            throw new BusinessException(ResponseCodeEnum.CODE_600);
+        }
+        videoCommentMapper.update(null, new LambdaUpdateWrapper<VideoComment>()
+                .eq(VideoComment::getCommentId, commentId)
+                .set(VideoComment::getTopType, 0));
+    }
+
+    /** interaction 为逗号分隔标记："0"=关弹幕，"1"=关评论 */
+    private boolean isInteractionFlagOn(String interaction, String flag) {
+        if (interaction == null || interaction.isEmpty()) {
+            return false;
+        }
+        for (String part : interaction.split(",")) {
+            if (flag.equals(part.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

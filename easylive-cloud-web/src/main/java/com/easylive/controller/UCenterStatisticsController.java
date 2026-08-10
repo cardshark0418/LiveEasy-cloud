@@ -36,10 +36,10 @@ public class UCenterStatisticsController {
     private RedisComponent redisComponent;
 
     @RequestMapping("/getActualTimeStatisticsInfo")
-    @GlobalInterceptor
+    @GlobalInterceptor(checkLogin = true)
     public ResponseVO getActualTimeStatisticsInfo(HttpServletRequest request) {
 
-        String preDate = DateUtil.formatDate(DateUtil.yesterday());
+        String preDate = DateUtil.format(DateUtil.yesterday(), "yyyyMMdd");
         UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
         List<StatisticsInfo> preDayData = statisticsInfoService.list(new LambdaQueryWrapper<StatisticsInfo>()
                 .eq(StatisticsInfo::getUserId,tokenUserInfoDto.getUserId())
@@ -53,7 +53,7 @@ public class UCenterStatisticsController {
     }
 
     @RequestMapping("/getWeekStatisticsInfo")
-    @GlobalInterceptor
+    @GlobalInterceptor(checkLogin = true)
     public ResponseVO getWeekStatisticsInfo(Integer dataType,HttpServletRequest request) {
         UserLoginDto tokenUserInfoDto = redisComponent.getTokenUserInfoDto(request);
         DateTime start = DateUtil.offsetDay(DateUtil.date(), -7);

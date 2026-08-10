@@ -88,7 +88,8 @@ public class StatisticsInfoServiceImpl extends MPJBaseServiceImpl<StatisticsInfo
 
         //统计 弹幕、点赞、收藏、投币
         List<StatisticsInfo> statisticsInfoOthers = selectStatisticsInfo(statisticsDate,
-                new Integer[]{UserActionTypeEnum.VIDEO_LIKE.getType(), UserActionTypeEnum.VIDEO_COIN.getType(), UserActionTypeEnum.VIDEO_COLLECT.getType()});
+                new Integer[]{UserActionTypeEnum.VIDEO_LIKE.getType(), UserActionTypeEnum.VIDEO_COIN.getType(),
+                        UserActionTypeEnum.VIDEO_COLLECT.getType(), UserActionTypeEnum.VIDEO_DANMU.getType()});
 
         for (StatisticsInfo statisticsInfo : statisticsInfoOthers) {
             statisticsInfo.setStatisticsDate(statisticsDate);
@@ -98,13 +99,14 @@ public class StatisticsInfoServiceImpl extends MPJBaseServiceImpl<StatisticsInfo
                 statisticsInfo.setDataType(StatisticsTypeEnum.COLLECTION.getType());
             } else if (UserActionTypeEnum.VIDEO_COIN.getType().equals(statisticsInfo.getDataType())) {
                 statisticsInfo.setDataType(StatisticsTypeEnum.COIN.getType());
+            } else if (UserActionTypeEnum.VIDEO_DANMU.getType().equals(statisticsInfo.getDataType())) {
+                statisticsInfo.setDataType(StatisticsTypeEnum.DANMU.getType());
             }
         }
         statisticsInfoList.addAll(statisticsInfoOthers);
 
-//        saveOrUpdateBatch(statisticsInfoList);
         statisticsInfoMapper.delete(new LambdaQueryWrapper<StatisticsInfo>()
-                .eq(StatisticsInfo::getStatisticsDate, yesterday));
+                .eq(StatisticsInfo::getStatisticsDate, statisticsDate));
 
         saveBatch(statisticsInfoList);
     }
@@ -156,11 +158,12 @@ public class StatisticsInfoServiceImpl extends MPJBaseServiceImpl<StatisticsInfo
             // 可以在这里补 0，或者让前端处理 null
         }
         if (!StrUtil.isEmpty(userId)) {
-            //查询粉丝数
-            result.put("userCount", Math.toIntExact(userFocusMapper.selectCount(new LambdaQueryWrapper<UserFocus>()
-                    .eq(UserFocus::getFocusUserId, userId))));
+            // 查询粉丝数（前端 totalCountKey 为 fansCount）
+            int fansCount = Math.toIntExact(userFocusMapper.selectCount(new LambdaQueryWrapper<UserFocus>()
+                    .eq(UserFocus::getFocusUserId, userId)));
+            result.put("fansCount", fansCount);
         } else {
-            result.put("userCount", Math.toIntExact(userInfoMapper.selectCount(new LambdaQueryWrapper<UserInfo>())));
+            result.put("fansCount", Math.toIntExact(userInfoMapper.selectCount(new LambdaQueryWrapper<UserInfo>())));
         }
         return result;
     }

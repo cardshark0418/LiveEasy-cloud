@@ -43,13 +43,29 @@ public class VideoDanmuController{
     public ResponseVO loadDanmu(@NotEmpty String fileId, @NotEmpty String videoId) {
 
         VideoInfo videoInfo = videoClient.getVideoInfoByVideoId(videoId);
-        if (videoInfo.getInteraction() != null && videoInfo.getInteraction().contains("0")) {
+        if (videoInfo == null) {
+            return getSuccessResponseVO(new ArrayList<>());
+        }
+        // "0"=关闭弹幕
+        if (isInteractionFlagOn(videoInfo.getInteraction(), "0")) {
             return getSuccessResponseVO(new ArrayList<>());
         }
 
         return getSuccessResponseVO(videoDanmuService.list(new LambdaQueryWrapper<VideoDanmu>()
                 .eq(VideoDanmu::getFileId,fileId)
                 .orderByAsc(VideoDanmu::getDanmuId)));
+    }
+
+    private boolean isInteractionFlagOn(String interaction, String flag) {
+        if (interaction == null || interaction.isEmpty()) {
+            return false;
+        }
+        for (String part : interaction.split(",")) {
+            if (flag.equals(part.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @RequestMapping("/postDanmu")

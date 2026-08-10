@@ -47,7 +47,7 @@ spring:
         - id: web-route
           uri: lb://easylive-cloud-web
           predicates:
-            - Path=/account/**,/category/**,/video/**,/uhome/**,/ucenter/**,/sysSetting/**
+            - Path=/account/**,/category/**,/video/**,/uhome/**,/ucenter/**,/sysSetting/**,/history/**
 
 seata:
   enabled: false

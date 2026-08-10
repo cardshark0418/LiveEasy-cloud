@@ -31,7 +31,7 @@ CREATE TABLE `branch_table` (
                                 `resource_id` varchar(256) DEFAULT NULL,
                                 `branch_type` varchar(8) DEFAULT NULL,
                                 `status` tinyint DEFAULT NULL,
-                                `content` varchar(128) DEFAULT NULL,
+                                `client_id` varchar(64) DEFAULT NULL,
                                 `application_data` varchar(2000) DEFAULT NULL,
                                 `gmt_create` datetime(6) DEFAULT NULL,
                                 `gmt_modified` datetime(6) DEFAULT NULL,
@@ -115,10 +115,12 @@ CREATE TABLE `lock_table` (
                               `resource_id` varchar(256) DEFAULT NULL,
                               `table_name` varchar(32) DEFAULT NULL,
                               `pk` varchar(36) DEFAULT NULL,
+                              `status` tinyint NOT NULL DEFAULT 0 COMMENT '0:locked ,1:rollbacking',
                               `gmt_create` datetime DEFAULT NULL,
                               `gmt_modified` datetime DEFAULT NULL,
                               PRIMARY KEY (`row_key`),
-                              KEY `idx_branch_id` (`branch_id`)
+                              KEY `idx_branch_id` (`branch_id`),
+                              KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

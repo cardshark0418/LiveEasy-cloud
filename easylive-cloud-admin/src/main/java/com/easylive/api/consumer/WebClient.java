@@ -9,6 +9,7 @@ import com.easylive.entity.query.VideoInfoPostQuery;
 import com.easylive.entity.vo.PaginationResultVO;
 import feign.Response;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,7 +26,7 @@ public interface WebClient {
     @RequestMapping(Constants.INNER_API_PREFIX+"/statistics/admin/getWeekStatisticsInfo")
     List<StatisticsInfo> getWeekStatisticsInfo(@RequestParam Integer dataType);
 
-    @RequestMapping(Constants.INNER_API_PREFIX + "/video/getVideoCount")
+    @PostMapping(Constants.INNER_API_PREFIX + "/video/getVideoCount")
     Integer getVideoCount(@RequestBody Integer categoryId);
 
     @RequestMapping(Constants.INNER_API_PREFIX + "/user/loadUser")
