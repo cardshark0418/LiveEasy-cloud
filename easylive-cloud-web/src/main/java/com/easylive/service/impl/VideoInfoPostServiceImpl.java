@@ -181,21 +181,27 @@ public class VideoInfoPostServiceImpl extends ServiceImpl<VideoInfoPostMapper,Vi
     @Override
     public void transferVideoFile(VideoInfoFilePost videoInfoFile) {
         VideoInfoFilePost updateFilePost = new VideoInfoFilePost();
+        File tempFile = null;
+        File targetFile = null;
+        boolean transferSuccess = false;
         try {
             UploadingFileDto fileDto = redisComponent.getUploadingVideoFile(videoInfoFile.getUserId(), videoInfoFile.getUploadId());
+            if (fileDto == null) {
+                throw new BusinessException("上传文件信息不存在");
+            }
             /*
               拷贝文件到正式目录
              */
             String tempFilePath = appConfig.getProjectFolder() + "file/temp/" + fileDto.getFilePath();
 
-            File tempFile = new File(tempFilePath);
+            tempFile = new File(tempFilePath);
 
             String targetFilePath = appConfig.getProjectFolder() + "file/video/" + fileDto.getFilePath();
-            File taregetFile = new File(targetFilePath);
-            if (!taregetFile.exists()) {
-                taregetFile.mkdirs();
+            targetFile = new File(targetFilePath);
+            if (!targetFile.exists()) {
+                targetFile.mkdirs();
             }
-            FileUtils.copyDirectory(tempFile, taregetFile);
+            FileUtils.copyDirectory(tempFile, targetFile);
 
             /*
              * 删除临时目录
@@ -217,16 +223,31 @@ public class VideoInfoPostServiceImpl extends ServiceImpl<VideoInfoPostMapper,Vi
             updateFilePost.setFileSize(new File(completeVideo).length());
             updateFilePost.setFilePath("video/" + fileDto.getFilePath());
             updateFilePost.setTransferResult(VideoFileTransferResultEnum.SUCCESS.getStatus());
-            FileUtils.forceDelete(tempFile);
             /*
              * ffmpeg切割文件
              */
             convertVideo2Ts(completeVideo);
+            transferSuccess = true;
 
         } catch (Exception e) {
             log.error("文件转码失败", e);
             updateFilePost.setTransferResult(VideoFileTransferResultEnum.FAIL.getStatus());
         } finally {
+            // 无论成功还是失败，都清理临时分片；失败时同时清理可能生成了一半的正式目录
+            if (tempFile != null && tempFile.exists()) {
+                try {
+                    FileUtils.deleteDirectory(tempFile);
+                } catch (IOException e) {
+                    log.error("清理视频临时文件失败：{}", tempFile.getAbsolutePath(), e);
+                }
+            }
+            if (!transferSuccess && targetFile != null && targetFile.exists()) {
+                try {
+                    FileUtils.deleteDirectory(targetFile);
+                } catch (IOException e) {
+                    log.error("清理转码失败目录失败：{}", targetFile.getAbsolutePath(), e);
+                }
+            }
 
             //更新文件状
             videoInfoFilePostMapper.update(updateFilePost, new LambdaQueryWrapper<VideoInfoFilePost>()
