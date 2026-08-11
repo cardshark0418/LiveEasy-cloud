@@ -60,7 +60,6 @@ public class UserMessage implements Serializable {
     /**
      * 扩展信息
      */
-    @TableField(exist = false)
     private String extendJson;
 
 
