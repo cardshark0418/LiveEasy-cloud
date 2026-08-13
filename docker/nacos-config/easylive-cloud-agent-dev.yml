@@ -1,0 +1,14 @@
+server:
+  port: 7074
+
+spring:
+  application:
+    name: easylive-cloud-agent
+
+agent:
+  model:
+    # 请在 Nacos 控制台填写实际密钥，不要提交到 Git
+    api-key: ${AGENT_MODEL_API_KEY:}
+    base-url: ${AGENT_MODEL_BASE_URL:https://api.deepseek.com}
+    model-name: ${AGENT_MODEL_NAME:deepseek-v4-flash}
+    temperature: ${AGENT_MODEL_TEMPERATURE:0.3}

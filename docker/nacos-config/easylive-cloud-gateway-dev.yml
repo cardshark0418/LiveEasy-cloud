@@ -49,5 +49,10 @@ spring:
           predicates:
             - Path=/account/**,/category/**,/video/**,/uhome/**,/ucenter/**,/sysSetting/**,/history/**
 
+        - id: agent-route
+          uri: lb://easylive-cloud-agent
+          predicates:
+            - Path=/agent/**
+
 seata:
   enabled: false

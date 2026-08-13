@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.easylive.annotation.RecordUserMessage;
 import com.easylive.component.EsSearchComponent;
 import com.easylive.entity.constants.Constants;
+import com.easylive.entity.po.UserInfo;
 import com.easylive.entity.po.VideoInfo;
 import com.easylive.entity.po.VideoInfoFile;
 import com.easylive.entity.po.VideoInfoFilePost;
@@ -18,6 +19,7 @@ import com.easylive.service.VideoInfoFilePostService;
 import com.easylive.service.VideoInfoFileService;
 import com.easylive.service.VideoInfoPostService;
 import com.easylive.service.VideoInfoService;
+import com.github.yulichang.wrapper.MPJLambdaWrapper;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -159,6 +161,44 @@ public class VideoInfoApi {
     @RequestMapping("/getVideoInfoByName")
     List<VideoInfo> getVideoInfoByName(@RequestParam String videoNameFuzzy){
         return videoInfoService.list(new LambdaQueryWrapper<VideoInfo>().like(VideoInfo::getVideoName,videoNameFuzzy));
+    }
+
+    @RequestMapping("/search")
+    public PaginationResultVO<VideoInfo> search(@NotEmpty String keyword, Integer orderType, Integer pageNo) {
+        return esSearchComponent.search(false, keyword, orderType, pageNo, 10);
+    }
+
+    @RequestMapping("/getVideoRecommend")
+    public List<VideoInfo> getVideoRecommend(@NotEmpty String keyword, @NotEmpty String videoId) {
+        List<VideoInfo> videoInfoList;
+        try {
+            videoInfoList = esSearchComponent.search(false, keyword,
+                    SearchOrderTypeEnum.VIDEO_PLAY.getType(), 1, 10).getList();
+            if (videoInfoList == null) {
+                videoInfoList = new ArrayList<>();
+            }
+            videoInfoList = videoInfoList.stream()
+                    .filter(item -> !videoId.equals(item.getVideoId()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            videoInfoList = new ArrayList<>();
+        }
+
+        if (videoInfoList.isEmpty()) {
+            VideoInfo current = videoInfoService.getById(videoId);
+            MPJLambdaWrapper<VideoInfo> wrapper = new MPJLambdaWrapper<VideoInfo>()
+                    .ne(VideoInfo::getVideoId, videoId)
+                    .orderByDesc(VideoInfo::getPlayCount)
+                    .last("LIMIT 10")
+                    .selectAll(VideoInfo.class)
+                    .leftJoin(UserInfo.class, UserInfo::getUserId, VideoInfo::getUserId)
+                    .select(UserInfo::getNickName, UserInfo::getAvatar);
+            if (current != null && current.getPCategoryId() != null) {
+                wrapper.eq(VideoInfo::getPCategoryId, current.getPCategoryId());
+            }
+            videoInfoList = videoInfoService.selectJoinList(VideoInfo.class, wrapper);
+        }
+        return videoInfoList;
     }
 
     @PostMapping("/getVideoCount")

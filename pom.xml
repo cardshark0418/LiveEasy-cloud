@@ -22,6 +22,7 @@
 		<module>easylive-cloud-admin</module>
 		<module>easylive-cloud-resource</module>
 		<module>easylive-cloud-interact</module>
+		<module>easylive-cloud-agent</module>
 	</modules>
 
 

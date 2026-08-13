@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: easylive-cloud-agent
+
+agent:
+  model:
+    api-key: ${AGENT_MODEL_API_KEY:}
+    base-url: ${AGENT_MODEL_BASE_URL:https://api.deepseek.com}
+    model-name: ${AGENT_MODEL_NAME:deepseek-v4-flash}
+    temperature: ${AGENT_MODEL_TEMPERATURE:0.3}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

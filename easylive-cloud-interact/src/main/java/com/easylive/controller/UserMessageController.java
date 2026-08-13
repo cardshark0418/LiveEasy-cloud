@@ -25,6 +25,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -99,10 +100,25 @@ public class UserMessageController{
                 .eq(UserMessage::getUserId, tokenUserInfoDto.getUserId())
                 .orderByDesc("message_id"));
         List<UserMessage> list = page.getRecords();
-        Set<String> userIdList = list.stream().map(UserMessage::getSendUserId).collect(Collectors.toSet());
-        Set<String> videoIdList = list.stream().map(UserMessage::getVideoId).collect(Collectors.toSet());
-        Map<String, UserInfo> userInfoBatch = userClient.getUserInfoBatch(userIdList);
-        Map<String, VideoInfo> videoInfoBatch = videoClient.getVideoInfoBatch(videoIdList);
+        if (list.isEmpty()) {
+            return getSuccessResponseVO(new PaginationResultVO<>((int) page.getTotal(), 15, pageNo, page.getRecords()));
+        }
+
+        Set<String> userIdList = list.stream()
+                .map(UserMessage::getSendUserId)
+                .filter(id -> id != null && !id.trim().isEmpty())
+                .collect(Collectors.toSet());
+        Set<String> videoIdList = list.stream()
+                .map(UserMessage::getVideoId)
+                .filter(id -> id != null && !id.trim().isEmpty())
+                .collect(Collectors.toSet());
+
+        Map<String, UserInfo> userInfoBatch = userIdList.isEmpty()
+                ? new HashMap<>()
+                : userClient.getUserInfoBatch(userIdList);
+        Map<String, VideoInfo> videoInfoBatch = videoIdList.isEmpty()
+                ? new HashMap<>()
+                : videoClient.getVideoInfoBatch(videoIdList);
         list.forEach(item -> {
             // 填充用户信息
             if (userInfoBatch != null && userInfoBatch.containsKey(item.getSendUserId())) {

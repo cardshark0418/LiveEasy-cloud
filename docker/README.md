@@ -30,7 +30,7 @@ Local Redis, Elasticsearch, Nacos, and Seata for EasyLive cloud development.
    docker compose up -d
    ```
 
-4. Import Nacos application configs (five YAML files under `docker/nacos-config/`):
+4. Import Nacos application configs (YAML files under `docker/nacos-config/`):
 
    ```powershell
    powershell -ExecutionPolicy Bypass -File docker/scripts/import-nacos-config.ps1
@@ -45,7 +45,7 @@ Local Redis, Elasticsearch, Nacos, and Seata for EasyLive cloud development.
 
 ## Start apps in IDEA
 
-Recommended order: **resource → web → interact → admin → gateway**.
+Recommended order: **resource → web → interact → agent → admin → gateway**.
 
 ## Notes (Windows Docker Desktop)
 
