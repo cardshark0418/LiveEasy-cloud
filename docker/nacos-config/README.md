@@ -8,7 +8,7 @@
 | `easylive-cloud-gateway-dev.yml` | 网关服务，8080 |
 | `easylive-cloud-interact-dev.yml` | 互动服务，7072 |
 | `easylive-cloud-resource-dev.yml` | 资源服务，7073 |
-| `easylive-cloud-web-dev.yml` | 主站服务，7070 |
+| `easylive-cloud-web-dev.yml` | 主站服务，7075 |
 | `easylive-cloud-agent-dev.yml` | 用户端 AI 助手，7074 |
 
 导入时请保持以下配置：
@@ -43,3 +43,24 @@ agent:
 ```
 
 保存后重启 `easylive-cloud-agent`。仓库文件只作为给其他部署者使用的模板，实际密钥应保存在各自的 Nacos 配置中，不要提交到 Git。
+
+## 视频向量检索
+
+`easylive-cloud-web-dev.yml` 中的 `embedding` 配置用于视频向量化和语义检索：
+
+```yaml
+embedding:
+  enabled: true
+  api-key: 你的Embedding密钥
+  base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  model-name: text-embedding-v4
+  dimension: 1024
+```
+
+审核通过的视频会自动生成向量并写入 ES。已有视频可以调用 web 服务的内部接口补建：
+
+```text
+POST /innerApi/video/rebuildVideoVectors
+```
+
+向量配置修改后需要重启 `easylive-cloud-web`，因为向量模型客户端在服务启动时读取配置。仓库配置只保留占位符，真实密钥只放在本机 Nacos 中。

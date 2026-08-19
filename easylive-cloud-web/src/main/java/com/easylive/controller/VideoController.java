@@ -14,7 +14,6 @@ import com.easylive.entity.vo.PaginationResultVO;
 import com.easylive.entity.vo.ResponseVO;
 import com.easylive.entity.vo.UserLoginDto;
 import com.easylive.entity.vo.VideoInfoResultVo;
-import com.easylive.enums.SearchOrderTypeEnum;
 import com.easylive.enums.VideoRecommendTypeEnum;
 import com.easylive.exception.BusinessException;
 import com.easylive.redis.RedisComponent;
@@ -131,9 +130,14 @@ public class VideoController {
 
     @RequestMapping("/search")
 //    @GlobalInterceptor
-    public ResponseVO search(@NotEmpty String keyword, Integer orderType, Integer pageNo) {
+    public ResponseVO search(@NotEmpty String keyword, Integer orderType, Integer pageNo, Boolean exact) {
         redisComponent.addKeywordCount(keyword);
-        PaginationResultVO resultVO = esSearchComponent.search(true, keyword, orderType, pageNo, 30);
+        PaginationResultVO resultVO;
+        if (Boolean.TRUE.equals(exact)) {
+            resultVO = esSearchComponent.search(true, keyword, orderType, pageNo, 30);
+        } else {
+            resultVO = esSearchComponent.hybridSearch(true, keyword, orderType, pageNo, 30);
+        }
         return getSuccessResponseVO(resultVO);
     }
 
@@ -142,7 +146,7 @@ public class VideoController {
     public ResponseVO getVideoRecommend(@NotEmpty String keyword, @NotEmpty String videoId) {
         List<VideoInfo> videoInfoList;
         try {
-            videoInfoList = esSearchComponent.search(false, keyword, SearchOrderTypeEnum.VIDEO_PLAY.getType(), 1, 10).getList();
+            videoInfoList = esSearchComponent.hybridSearch(false, keyword, null, 1, 10).getList();
             if (videoInfoList == null) {
                 videoInfoList = new ArrayList<>();
             }

@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: easylive-cloud-agent
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
 
 agent:
   model:

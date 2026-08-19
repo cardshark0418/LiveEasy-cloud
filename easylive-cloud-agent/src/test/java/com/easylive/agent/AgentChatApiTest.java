@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 /**
  * Agent 接口测试类。
@@ -20,12 +21,19 @@ public class AgentChatApiTest {
 
         // 2. 要发送的问题
         String message = "帮我找一些nasa相关的视频";
-        String json = "{\"message\":\"" + message + "\"}";
+        String conversationId = System.getProperty(
+                "agent.conversationId", UUID.randomUUID().toString().replace("-", ""));
+        String token = System.getProperty("agent.token", "");
+        String json = "{\"conversationId\":\"" + conversationId
+                + "\",\"message\":\"" + message + "\"}";
 
         // 3. 创建 POST 请求
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+        if (!token.isEmpty()) {
+            connection.setRequestProperty("Cookie", "token=" + token);
+        }
         connection.setDoOutput(true);
 
         // 4. 发送请求

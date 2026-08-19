@@ -5,6 +5,7 @@
 ## 当前能力
 
 - `POST /agent/chat`：普通聊天接口
+- 请求参数必须包含 `conversationId`；接口从登录 Cookie 中读取用户身份，按用户隔离 Redis 记忆
 - 根据用户意图调用视频搜索工具
 - 注册到 Nacos 服务名 `easylive-cloud-agent`
 - 端口：7074
@@ -48,6 +49,20 @@ src/test/java/com/easylive/agent/AgentChatApiTest.java
 ```text
 -Dagent.chat.url=http://127.0.0.1:7074/agent/chat
 ```
+
+测试类还需要传入当前用户的登录令牌，因为 Agent 不接受前端传入的用户 ID：
+
+```text
+-Dagent.token=登录后的token
+```
+
+短期记忆 Redis 键名为：
+
+```text
+easylive:agent:memory:{用户ID}:{conversationId}
+```
+
+记忆最多保留最近 20 条消息，Redis 过期时间为 30 天；每次对话更新后重新计算过期时间。
 
 ```powershell
 Invoke-RestMethod -Method Post `

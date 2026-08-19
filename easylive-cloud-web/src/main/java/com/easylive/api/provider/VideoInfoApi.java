@@ -165,15 +165,14 @@ public class VideoInfoApi {
 
     @RequestMapping("/search")
     public PaginationResultVO<VideoInfo> search(@NotEmpty String keyword, Integer orderType, Integer pageNo) {
-        return esSearchComponent.search(false, keyword, orderType, pageNo, 10);
+        return esSearchComponent.hybridSearch(false, keyword, orderType, pageNo, 10);
     }
 
     @RequestMapping("/getVideoRecommend")
     public List<VideoInfo> getVideoRecommend(@NotEmpty String keyword, @NotEmpty String videoId) {
         List<VideoInfo> videoInfoList;
         try {
-            videoInfoList = esSearchComponent.search(false, keyword,
-                    SearchOrderTypeEnum.VIDEO_PLAY.getType(), 1, 10).getList();
+            videoInfoList = esSearchComponent.hybridSearch(false, keyword, null, 1, 10).getList();
             if (videoInfoList == null) {
                 videoInfoList = new ArrayList<>();
             }
@@ -199,6 +198,12 @@ public class VideoInfoApi {
             videoInfoList = videoInfoService.selectJoinList(VideoInfo.class, wrapper);
         }
         return videoInfoList;
+    }
+
+    /** 为已经存在的正式视频补建语义向量。 */
+    @PostMapping("/rebuildVideoVectors")
+    public Map<String, Integer> rebuildVideoVectors() {
+        return esSearchComponent.rebuildVideoVectors();
     }
 
     @PostMapping("/getVideoCount")

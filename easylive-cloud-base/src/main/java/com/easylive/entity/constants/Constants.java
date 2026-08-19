@@ -31,6 +31,7 @@ public class Constants {
     public static final Integer REDIS_KEY_EXPIRES_ONE_SECONDS = 1000;
     public static final Integer REDIS_KEY_EXPIRES_DAY = ONE_MIN_MILLS * 60 * 24;
     public static final String REDIS_KEY_USER_TOKEN = REDIS_KEY_PREFIX+"user:token:";
+    public static final String REDIS_KEY_AGENT_MEMORY = REDIS_KEY_PREFIX + "agent:memory:";
     public static final String INNER_API_PREFIX = "/innerApi";
 
 }

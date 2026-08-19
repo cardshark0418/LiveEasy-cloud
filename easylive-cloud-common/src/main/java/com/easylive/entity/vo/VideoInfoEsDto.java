@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -56,4 +57,7 @@ public class VideoInfoEsDto {
      * 收藏数量
      */
     private Integer collectCount;
+
+    /** 视频标题、标签和简介生成的语义向量。 */
+    private List<Float> videoVector;
 }
